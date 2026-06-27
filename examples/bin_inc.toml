@@ -1,0 +1,24 @@
+[metadata]
+name = "Binary Increment Multi-Tape"
+description = "Adds 1 to a binary number using an auxiliary tape"
+
+[machine]
+tape_count = 2
+initial_state = "q0"
+input_alphabet = ["0", "1"]
+tape_alphabet = ["0", "1", "X", "Y", " "]
+
+[[states]]
+name = "q0"
+is_accept = false
+
+[[states]]
+name = "q_accept"
+is_accept = true
+
+[[transitions]]
+current_state = "q0"
+next_state = "q_accept"
+read = ["1", " "]
+write = ["1", "1"]
+direction = ["RIGHT", "STAY"]

@@ -17,8 +17,9 @@
  */
 enum class Direction
 {
-    LEFT, ///< Move the tape head one cell to the left.
-    RIGHT ///< Move the tape head one cell to the right.
+    LEFT,  ///< Move the tape head one cell to the left.
+    RIGHT, ///< Move the tape head one cell to the right.
+    STAY   ///< Keep the tape head on the current cell.
 };
 
 #endif // DIRECTION_HPP
