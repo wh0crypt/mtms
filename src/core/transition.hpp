@@ -1,8 +1,8 @@
 /**
  * @file transition.hpp
  * @author wh0crypt (wh0crypt@proton.me)
- * @brief Transition class representing a single rule in the Turing Machine's transition function.
- * @version 0.1
+ * @brief Transition class representing a multi-tape rule in the TM's transition function.
+ * @version 0.2
  * @date 2026-06-27
  *
  * @copyright Copyright (c) 2026 wh0crypt. Licensed under the MIT License.
@@ -16,13 +16,14 @@
 #include "symbol.hpp"
 
 #include <utility>
+#include <vector>
 
 /**
  * @class Transition
- * @brief Represents a quintuple transition rule (δ: Q × Γ → Q × Γ × {L, R}).
+ * @brief Represents a multi-tape transition rule (δ: Q × Γ^k → Q × Γ^k × {L, R}^k).
  *
- * Defines the action to take when the Turing Machine is in a specific state
- * and reads a specific symbol from the tape.
+ * Defines the synchronized actions to take across all k parallel tapes when the
+ * Turing Machine is in a specific state.
  */
 class Transition
 {
@@ -30,21 +31,26 @@ class Transition
     /**
      * @brief Default constructor. Initializes an empty transition shifting LEFT.
      */
-    Transition() : dir_(Direction::LEFT) {}
+    Transition() = default;
 
     /**
-     * @brief Explicit constructor to define a complete transition rule.
-     * Passes heavy objects (States) by value and moves them to eliminate redundant allocations.
-     *
+     * @brief Explicit constructor to define a complete multi-tape transition rule.
      * @param current The required state to trigger this transition.
      * @param next The target state the machine will transition into.
-     * @param read The symbol that must be read under the tape head.
-     * @param write The symbol to be written onto the tape.
-     * @param dir The direction to move the tape head (LEFT or RIGHT).
+     * @param read The collection of symbols expected under each parallel tape head.
+     * @param write The collection of new symbols to overwrite onto each tape track.
+     * @param dir The collection of displacement directions for each tape head.
      */
-    explicit Transition(State current, State next, Symbol read, Symbol write, Direction dir)
-        : current_state_(std::move(current)), next_state_(std::move(next)), read_symbol_(read),
-          write_symbol_(write), dir_(dir)
+    explicit Transition(
+        State current,
+        State next,
+        std::vector<Symbol> read,
+        std::vector<Symbol> write,
+        std::vector<Direction> dir
+    )
+        : current_state_(std::move(current)), next_state_(std::move(next)),
+          read_symbols_(std::move(read)), write_symbols_(std::move(write)),
+          dir_vectors_(std::move(dir))
     {}
 
     /**
@@ -60,24 +66,31 @@ class Transition
     [[nodiscard]] const State &get_next_state() const { return this->next_state_; }
 
     /**
-     * @brief Retrieves the symbol that must be present under the tape head.
-     * Returning by value is optimal since Symbol is a lightweight, trivially-copyable type.
-     *
-     * @return Symbol The expected symbol on the tape.
+     * @brief Retrieves the collection of symbols that must be present under the tape heads.
+     * @return const std::vector<Symbol>& A read-only reference to the expected symbols vector.
      */
-    [[nodiscard]] Symbol get_read_symbol() const { return this->read_symbol_; }
+    [[nodiscard]] const std::vector<Symbol> &get_read_symbols() const
+    {
+        return this->read_symbols_;
+    }
 
     /**
-     * @brief Retrieves the new symbol that will overwrite the current tape cell.
-     * @return Symbol The symbol to be written onto the tape.
+     * @brief Retrieves the new symbols that will overwrite the current parallel tape cells.
+     * @return const std::vector<Symbol>& A read-only reference to the symbols to be written.
      */
-    [[nodiscard]] Symbol get_write_symbol() const { return this->write_symbol_; }
+    [[nodiscard]] const std::vector<Symbol> &get_write_symbols() const
+    {
+        return this->write_symbols_;
+    }
 
     /**
-     * @brief Retrieves the direction (LEFT or RIGHT) in which the tape head must shift.
-     * @return Direction The head movement direction enum value.
+     * @brief Retrieves the directions in which each parallel tape head must shift.
+     * @return const std::vector<Direction>& A read-only reference to the head movement vectors.
      */
-    [[nodiscard]] Direction get_direction() const { return this->dir_; }
+    [[nodiscard]] const std::vector<Direction> &get_directions() const
+    {
+        return this->dir_vectors_;
+    }
 
     /**
      * @brief Defaulted three-way comparison operator (C++20 spaceship operator).
@@ -90,11 +103,11 @@ class Transition
     auto operator<=>(const Transition &other) const = default;
 
   private:
-    State current_state_; ///< Source state for the transition rule.
-    State next_state_;    ///< Destination state after execution.
-    Symbol read_symbol_;  ///< Expected symbol on the tape.
-    Symbol write_symbol_; ///< New symbol to overwrite onto the tape.
-    Direction dir_;       ///< Head shift direction.
+    State current_state_;                ///< Source state for the transition rule.
+    State next_state_;                   ///< Destination state after execution.
+    std::vector<Symbol> read_symbols_;   ///< Expected vector array of symbols on the tracks.
+    std::vector<Symbol> write_symbols_;  ///< New vector array of symbols to write.
+    std::vector<Direction> dir_vectors_; ///< Structural head shift directions vector.
 };
 
 #endif // TRANSITION_HPP
