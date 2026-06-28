@@ -56,14 +56,28 @@ class State
     [[nodiscard]] bool is_accept() const { return this->is_accept_; }
 
     /**
-     * @brief Defaulted three-way comparison operator (C++20 spaceship operator).
-     * Instructs the compiler to automatically generate standard relational
-     * operators (<, <=, >, >=, ==, !=) based on the underlying label_ member.
+     * @brief Compares two states for equality using only their unique identifier.
      *
-     * @param other The other State instance to compare against.
-     * @return auto A strong ordering comparison category (std::strong_ordering).
+     * Within the formal definition of a Turing Machine, each state is uniquely
+     * identified by its label. Therefore, the acceptance flag is intentionally
+     * ignored during equality comparisons.
+     *
+     * @param other The state to compare against.
+     * @return true if both states share the same label, false otherwise.
      */
-    auto operator<=>(const State &other) const = default;
+    [[nodiscard]] bool operator==(const State &other) const { return label_ == other.label_; }
+
+    /**
+     * @brief Provides lexicographical ordering based solely on the state's label.
+     *
+     * This ordering allows State objects to be stored in ordered associative
+     * containers such as std::set while preserving the mathematical uniqueness
+     * of states by their identifier.
+     *
+     * @param other The state to compare against.
+     * @return std::strong_ordering The ordering relationship between both labels.
+     */
+    [[nodiscard]] auto operator<=>(const State &other) const { return label_ <=> other.label_; }
 
   private:
     std::string label_; ///< The unique identifier name of the state.

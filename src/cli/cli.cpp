@@ -57,7 +57,7 @@ int run_cli_session(TuringMachine &machine, std::string_view input_word, bool in
     {
         std::println(
             stderr,
-            "\n\033[1;31m[!]: Input string contains symbols outside the validation alphabet."
+            "\n\033[1;31m[!] Input string contains symbols outside the validation alphabet."
         );
         return EXIT_FAILURE;
     }

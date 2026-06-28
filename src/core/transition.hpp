@@ -93,14 +93,30 @@ class Transition
     }
 
     /**
-     * @brief Defaulted three-way comparison operator (C++20 spaceship operator).
-     * Instructs the compiler to automatically generate standard relational
-     * operators (<, <=, >, >=, ==, !=) based on the underlying members.
+     * @brief Checks equality of transitions based on their semantic identity.
      *
-     * @param other The other Transition instance to compare against.
-     * @return auto A strong ordering comparison category (std::strong_ordering).
+     * This definition allows detecting non-determinism in the Turing Machine by
+     * treating transitions with identical (state, read_symbols) as conflicts.
+     *
+     * @param other The transition to compare against.
+     * @return true if both transitions represent the same input condition.
      */
-    auto operator<=>(const Transition &other) const = default;
+    [[nodiscard]] bool operator==(const Transition &other) const
+    {
+        return current_state_ == other.current_state_ && read_symbols_ == other.read_symbols_;
+    }
+
+    /**
+     * @brief Lexicographical ordering of transitions for container storage.
+     *
+     * @warning This ordering is purely structural and does NOT represent
+     * mathematical equivalence of transitions in the Turing Machine definition.
+     */
+    [[nodiscard]] auto operator<=>(const Transition &other) const
+    {
+        if (auto cmp = current_state_ <=> other.current_state_; cmp != 0) return cmp;
+        return read_symbols_ <=> other.read_symbols_;
+    }
 
   private:
     State current_state_;                ///< Source state for the transition rule.

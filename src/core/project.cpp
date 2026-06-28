@@ -14,6 +14,7 @@
 #include <print>
 #include <set>
 #include <toml++/toml.hpp>
+#include <unordered_map>
 #include <vector>
 
 #define TOML_HEADER_ONLY 1
@@ -35,6 +36,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
         // Parse States
         std::set<State> parsed_states;
         State initial_state;
+        std::unordered_map<std::string, State> state_map;
         if (auto states_array = config["states"].as_array())
         {
             for (auto &&node : *states_array)
@@ -44,7 +46,13 @@ bool Project::load_project(const std::filesystem::path &filepath)
                 bool is_accept = table["is_accept"].value_or(false);
 
                 State s(name, is_accept);
+                if (state_map.contains(name))
+                {
+                    std::println(stderr, "[!] Duplicate state '{}'.", name);
+                    return false;
+                }
                 parsed_states.insert(s);
+                state_map.emplace(name, s);
 
                 if (name == init_state_name) initial_state = s;
             }
@@ -66,7 +74,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
                     {
                         std::println(
                             stderr,
-                            "[!]: Input alphabet (Sigma) cannot contain the blank symbol."
+                            "[!] Input alphabet (Sigma) cannot contain the blank symbol."
                         );
                         return false;
                     }
@@ -98,8 +106,17 @@ bool Project::load_project(const std::filesystem::path &filepath)
             {
                 auto &&table = *node.as_table();
 
-                State curr_st(table["current_state"].value_or(""), false);
-                State next_st(table["next_state"].value_or(""), false);
+                std::string curr_name = table["current_state"].value_or("");
+                std::string next_name = table["next_state"].value_or("");
+
+                auto curr_it = state_map.find(curr_name);
+                auto next_it = state_map.find(next_name);
+
+                if (curr_it == state_map.end() || next_it == state_map.end())
+                {
+                    std::println(stderr, "[!] Transition references an undefined state.");
+                    return false;
+                }
 
                 std::vector<Symbol> read_vec;
                 std::vector<Symbol> write_vec;
@@ -142,7 +159,8 @@ bool Project::load_project(const std::filesystem::path &filepath)
                     }
                 }
 
-                transition_table.emplace(curr_st, next_st, read_vec, write_vec, dir_vec);
+                transition_table
+                    .emplace(curr_it->second, next_it->second, read_vec, write_vec, dir_vec);
             }
         }
 
@@ -156,7 +174,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
             {
                 std::println(
                     stderr,
-                    "[!]: Input alphabet symbol '{}' is missing from the tape alphabet (Gamma).",
+                    "[!] Input alphabet symbol '{}' is missing from the tape alphabet (Gamma).",
                     sym.get_char()
                 );
                 return false;
@@ -177,7 +195,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
     }
     catch (const toml::parse_error &err)
     {
-        std::println(stderr, "[!]: TOML parsing failed: {}", err.description());
+        std::println(stderr, "[!] TOML parsing failed: {}", err.description());
         return false;
     }
 }
@@ -275,7 +293,7 @@ bool Project::save_project(const std::filesystem::path &filepath) const
     }
     catch (const std::exception &e)
     {
-        std::println(stderr, "[!]: TOML saving failed: {}", e.what());
+        std::println(stderr, "[!] TOML saving failed: {}", e.what());
         return false;
     }
 }
