@@ -32,19 +32,19 @@ class Symbol
     /**
      * @brief Default constructor. Initializes the symbol as a blank/white space.
      */
-    Symbol() : char_(kBlank) {}
+    Symbol() noexcept : char_(kBlank) {}
 
     /**
      * @brief Explicit constructor to create a Symbol from a raw character.
      * @param symbol The raw character representation to be stored.
      */
-    explicit Symbol(char symbol) : char_(symbol) {}
+    explicit Symbol(char symbol) noexcept : char_(symbol) {}
 
     /**
      * @brief Getter for the underlying raw character.
      * @return char The primitive character stored inside the Symbol object.
      */
-    [[nodiscard]] char get_char() const { return this->char_; }
+    [[nodiscard]] char get_char() const noexcept { return this->char_; }
 
     /**
      * @brief Defaulted three-way comparison operator (C++20 spaceship operator).
@@ -54,7 +54,7 @@ class Symbol
      * @param other The other Symbol instance to compare against.
      * @return auto A strong ordering comparison category (std::strong_ordering).
      */
-    [[nodiscard]] auto operator<=>(const Symbol &other) const = default;
+    [[nodiscard]] auto operator<=>(const Symbol &other) const noexcept = default;
 
     /**
      * @brief Defaulted copy assignment operator.
@@ -63,13 +63,13 @@ class Symbol
      * @param other The source Symbol to copy from.
      * @return Symbol& Reference to this instance (*this) to allow chain assignment.
      */
-    Symbol &operator=(const Symbol &other) = default;
+    Symbol &operator=(const Symbol &other) noexcept = default;
 
     /**
      * @brief Prints the symbol's character representation to the specified output stream.
      * @param os The output stream target (defaults to std::cout).
      */
-    void print(std::ostream &os = std::cout) const { os << this->char_; }
+    void print(std::ostream &os = std::cout) const noexcept { os << this->char_; }
 
     /**
      * @brief Overloaded stream insertion operator for native stream integration.
@@ -79,7 +79,7 @@ class Symbol
      * @param symbol The Symbol instance to be printed.
      * @return std::ostream& Reference to the output stream to allow cascading.
      */
-    friend std::ostream &operator<<(std::ostream &os, const Symbol &symbol);
+    friend std::ostream &operator<<(std::ostream &os, const Symbol &symbol) noexcept;
 
   private:
     char char_; ///< The primitive character backing this Symbol.
@@ -89,7 +89,7 @@ class Symbol
  * @brief Global implementation of the stream insertion operator for Symbol.
  * @note Marked as inline to prevent ODR violations across multiple translation units.
  */
-inline std::ostream &operator<<(std::ostream &os, const Symbol &symbol)
+inline std::ostream &operator<<(std::ostream &os, const Symbol &symbol) noexcept
 {
     symbol.print(os);
     return os;

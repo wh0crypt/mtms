@@ -28,7 +28,7 @@ class State
     /**
      * @brief Default constructor. Initializes an empty state that is not accepting.
      */
-    State() : is_accept_(false) {}
+    State() noexcept : is_accept_(false) {}
 
     /**
      * @brief Explicit constructor to create a named State.
@@ -37,7 +37,7 @@ class State
      * @param label The unique string identifier for this state (e.g., "q0", "init").
      * @param is_accept Boolean flag indicating if this is an accepting/final state.
      */
-    explicit State(std::string label, bool is_accept)
+    explicit State(std::string label, bool is_accept) noexcept(false)
         : label_(std::move(label)), is_accept_(is_accept)
     {}
 
@@ -47,13 +47,13 @@ class State
      *
      * @return std::string_view A view of the state's internal name string.
      */
-    [[nodiscard]] std::string_view get_label() const { return this->label_; }
+    [[nodiscard]] std::string_view get_label() const noexcept { return this->label_; }
 
     /**
      * @brief Checks if this state is an accepting (final) state.
      * @return true If the machine should halt and accept when entering this state, false otherwise.
      */
-    [[nodiscard]] bool is_accept() const { return this->is_accept_; }
+    [[nodiscard]] bool is_accept() const noexcept { return this->is_accept_; }
 
     /**
      * @brief Compares two states for equality using only their unique identifier.
@@ -65,7 +65,10 @@ class State
      * @param other The state to compare against.
      * @return true if both states share the same label, false otherwise.
      */
-    [[nodiscard]] bool operator==(const State &other) const { return label_ == other.label_; }
+    [[nodiscard]] bool operator==(const State &other) const noexcept
+    {
+        return this->label_ == other.label_;
+    }
 
     /**
      * @brief Provides lexicographical ordering based solely on the state's label.
@@ -77,7 +80,10 @@ class State
      * @param other The state to compare against.
      * @return std::strong_ordering The ordering relationship between both labels.
      */
-    [[nodiscard]] auto operator<=>(const State &other) const { return label_ <=> other.label_; }
+    [[nodiscard]] auto operator<=>(const State &other) const noexcept
+    {
+        return this->label_ <=> other.label_;
+    }
 
   private:
     std::string label_; ///< The unique identifier name of the state.

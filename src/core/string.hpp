@@ -31,19 +31,19 @@ class String
     /**
      * @brief Default constructor. Initializes an empty string with no symbols.
      */
-    String() = default;
+    String() noexcept = default;
 
     /**
      * @brief Constructs a single-symbol string.
      * @param symbol The initial Symbol to wrap.
      */
-    explicit String(const Symbol &symbol) { this->symbols_.emplace_back(symbol); }
+    explicit String(const Symbol &symbol) noexcept(false) { this->symbols_.emplace_back(symbol); }
 
     /**
      * @brief Constructs a formal String from a raw string view.
      * @param str The raw character sequence.
      */
-    explicit String(std::string_view str);
+    explicit String(std::string_view str) noexcept(false);
 
     /**
      * @brief Constructs a String by taking ownership of an existing vector of symbols.
@@ -52,29 +52,29 @@ class String
      *
      * @param vec The source vector of symbols.
      */
-    explicit String(std::vector<Symbol> vec) : symbols_(std::move(vec)) {}
+    explicit String(std::vector<Symbol> vec) noexcept(false) : symbols_(std::move(vec)) {}
 
     /**
      * @brief Returns the total number of symbols contained in the string.
      * @return std::size_t The length of the formal string.
      */
-    [[nodiscard]] std::size_t length() const { return this->symbols_.size(); }
+    [[nodiscard]] std::size_t length() const noexcept { return this->symbols_.size(); }
 
     /**
      * @brief Reconstructs a standard std::string representation from the underlying symbols.
      * @return std::string A standard string concatenation of all wrapped symbols.
      */
-    [[nodiscard]] std::string get_str() const;
+    [[nodiscard]] std::string get_str() const noexcept(false);
 
     /**
      * @brief Returns an iterator to the beginning of the symbol sequence.
      */
-    [[nodiscard]] auto begin() const { return this->symbols_.begin(); }
+    [[nodiscard]] auto begin() const noexcept { return this->symbols_.begin(); }
 
     /**
      * @brief Returns an iterator to the end of the symbol sequence.
      */
-    [[nodiscard]] auto end() const { return this->symbols_.end(); }
+    [[nodiscard]] auto end() const noexcept { return this->symbols_.end(); }
 
     /**
      * @brief Validates if all symbols within this string belong to a specific formal Alphabet.
@@ -84,7 +84,7 @@ class String
      * @param alphabet The formal Alphabet descriptor to validate against.
      * @return true If every single symbol is registered in the alphabet, false otherwise.
      */
-    [[nodiscard]] bool is_valid_for(const Alphabet &alphabet) const;
+    [[nodiscard]] bool is_valid_for(const Alphabet &alphabet) const noexcept;
 
     /**
      * @brief Defaulted three-way comparison operator (C++20 spaceship operator).
@@ -95,7 +95,7 @@ class String
      * @param other The other String instance to compare against.
      * @return auto A strong ordering comparison category (std::strong_ordering).
      */
-    [[nodiscard]] auto operator<=>(const String &other) const = default;
+    [[nodiscard]] auto operator<=>(const String &other) const noexcept = default;
 
   private:
     std::vector<Symbol> symbols_; ///< The finite sequence of symbols forming the string.

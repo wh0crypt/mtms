@@ -29,7 +29,7 @@ class Alphabet
     /**
      * @brief Default constructor. Initializes an empty alphabet.
      */
-    Alphabet() = default;
+    Alphabet() noexcept = default;
 
     /**
      * @brief Explicit constructor to build an Alphabet from a string view.
@@ -37,48 +37,51 @@ class Alphabet
      *
      * @param str The sequence of characters representing the alphabet symbols.
      */
-    explicit Alphabet(std::string_view str) { this->insert(str); }
+    explicit Alphabet(std::string_view str) noexcept(false) { this->insert(str); }
 
     /**
      * @brief Explicit constructor to build an Alphabet from an existing set of Symbols.
      * @param symbols A standard set containing the initial Symbols.
      */
-    explicit Alphabet(const std::set<Symbol> &symbols) { this->insert(symbols); }
+    explicit Alphabet(const std::set<Symbol> &symbols) noexcept(false) { this->insert(symbols); }
 
     /**
      * @brief Getter for the underlying standard set of symbols.
      * @return const std::set<Symbol>& A read-only reference to the symbol set.
      */
-    [[nodiscard]] const std::set<Symbol> &get_set() const { return this->set_; }
+    [[nodiscard]] const std::set<Symbol> &get_set() const noexcept { return this->set_; }
 
     /**
      * @brief Retrieves the total number of unique symbols currently in the alphabet.
      * @return std::size_t The cardinality of the alphabet set.
      */
-    [[nodiscard]] std::size_t size() const { return this->set_.size(); }
+    [[nodiscard]] std::size_t size() const noexcept { return this->set_.size(); }
 
     /**
      * @brief Checks if a specific Symbol belongs to this alphabet.
      * @param symbol The Symbol instance to look up.
      * @return true If the symbol is present in the alphabet, false otherwise.
      */
-    [[nodiscard]] bool contains(const Symbol &symbol) const { return this->set_.contains(symbol); }
+    [[nodiscard]] bool contains(const Symbol &symbol) const noexcept
+    {
+        return this->set_.contains(symbol);
+    }
 
     /**
      * @brief Returns an iterator to the beginning of the alphabet set.
      */
-    [[nodiscard]] auto begin() const { return this->set_.begin(); }
+    [[nodiscard]] auto begin() const noexcept { return this->set_.begin(); }
 
     /**
      * @brief Returns an iterator to the end of the alphabet set.
      */
-    [[nodiscard]] auto end() const { return this->set_.end(); }
+    [[nodiscard]] auto end() const noexcept { return this->set_.end(); }
 
     /**
      * @brief Prints the alphabet in mathematical set notation format (e.g., "{0, 1}").
      * @param os The target output stream (defaults to std::cout).
      */
-    void print(std::ostream &os = std::cout) const;
+    void print(std::ostream &os = std::cout) const noexcept;
 
     /**
      * @brief Overloaded stream insertion operator to print the Alphabet object.
@@ -86,22 +89,21 @@ class Alphabet
      * @param alphabet The Alphabet instance to be streamed.
      * @return std::ostream& Reference to the output stream to allow cascading.
      */
-    friend std::ostream &operator<<(std::ostream &os, const Alphabet &alphabet);
+    friend std::ostream &operator<<(std::ostream &os, const Alphabet &alphabet) noexcept;
 
   private:
     std::set<Symbol> set_; ///< The unique, sorted collection of symbols composing the alphabet.
 
     /**
      * @brief Private helper template to genericly process and insert elements into the alphabet.
-     * Automatically filters out any `kBlank` symbols and wraps primitive types uniformly.
      *
      * @tparam T A collection type that supports range-based loops (e.g., string_view, std::set).
      * @param data The iterable dataset containing potential symbols.
      */
-    template <class T> void insert(const T &data);
+    template <class T> void insert(const T &data) noexcept(false);
 };
 
-template <class T> void Alphabet::insert(const T &data)
+template <class T> void Alphabet::insert(const T &data) noexcept(false)
 {
     for (const auto &s : data)
     {

@@ -32,15 +32,18 @@ class Tape
     /**
      * @brief Default constructor. Initializes an empty tape with the head at position 0.
      */
-    Tape() : head_pos_(0) {}
+    Tape() noexcept : head_pos_(0) {}
 
     /**
      * @brief Constructs a Tape populated with an initial formal String.
      * Places the string's symbols sequentially starting at index 0 and sets the head to 0.
      *
-     * @param string The formal String sequence to load onto the tape.
+     * @param str The formal String sequence to load onto the tape.
+     *
+     * @throws std::out_of_range If the input string length exceeds the maximum signed integer
+     * capacity of the tape.
      */
-    explicit Tape(String string);
+    explicit Tape(String str) noexcept(false);
 
     /**
      * @brief Reads the symbol currently located under the tape head.
@@ -50,15 +53,16 @@ class Tape
      *
      * @return Symbol The symbol scanned at the current head position.
      */
-    [[nodiscard]] Symbol read() const;
+    [[nodiscard]] Symbol read() const noexcept;
 
     /**
      * @brief Writes a symbol into the cell currently under the tape head.
      * Passed by value since Symbol is a lightweight, trivially-copyable type.
      *
      * @param symbol The Symbol instance to write.
+     * @throw std::bad_alloc If the internal map fails to allocate memory for a new coordinate node.
      */
-    void write(Symbol symbol) { this->cells_[this->head_pos_] = symbol; }
+    void write(Symbol symbol) noexcept(false) { this->cells_[this->head_pos_] = symbol; }
 
     /**
      * @brief Shifts the tape head one cell to the left, right or make it stay.
@@ -67,7 +71,7 @@ class Tape
      *
      * @param dir The movement direction (LEFT, RIGHT or STAY).
      */
-    void move(Direction dir)
+    void move(Direction dir) noexcept
     {
         switch (dir)
         {
@@ -87,7 +91,7 @@ class Tape
      * @brief Renders the active layout of the tape and the head tracking to an output stream.
      * @param os The target output stream (defaults to std::cout).
      */
-    void print(std::ostream &os = std::cout) const;
+    void print(std::ostream &os = std::cout) const noexcept;
 
     /**
      * @brief Overloaded stream insertion operator to allow direct streaming of Tape instances.
@@ -95,7 +99,7 @@ class Tape
      * @param tape The Tape instance to render.
      * @return std::ostream& A reference to the modified output stream.
      */
-    friend std::ostream &operator<<(std::ostream &os, const Tape &tape);
+    friend std::ostream &operator<<(std::ostream &os, const Tape &tape) noexcept;
 
   private:
     int head_pos_;                ///< Current mathematical index coordinate of the head.

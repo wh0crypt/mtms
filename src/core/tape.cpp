@@ -15,14 +15,26 @@
 
 /**
  * @brief Custom constructor to load a formal Word into the machine's memory.
+ *
  * Uses C++20 views::enumerate to extract both the structural index and the
  * Symbol object, populating the map from coordinate 0 onward.
+ *
+ * @param str The formal String sequence to load onto the tape.
+ *
+ * @throws std::out_of_range If the input string length exceeds the maximum signed integer capacity
+ * of the tape.
  */
-Tape::Tape(String str) : head_pos_(0)
+Tape::Tape(String str) noexcept(false) : head_pos_(0)
 {
     for (auto [idx, symbol] : std::views::enumerate(str))
     {
-        // Cast formal syntax index to signed integer to prevent underflow on shifts
+        // Guard against integer overflow on high-cardinality initialization streams
+        if (idx > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+        {
+            throw std::out_of_range(
+                "Input string length exceeds maximum signed integer capacity of the tape."
+            );
+        }
         this->cells_[static_cast<int>(idx)] = symbol;
     }
 }
@@ -33,7 +45,7 @@ Tape::Tape(String str) : head_pos_(0)
  * Safeguards the infinite tape constraint by looking up coordinates via std::map::find.
  * If the element is missing, it dynamically rolls a virtual kBlank context.
  */
-Symbol Tape::read() const
+Symbol Tape::read() const noexcept
 {
     auto it = this->cells_.find(this->head_pos_);
     if (it == this->cells_.end())
@@ -48,12 +60,14 @@ Symbol Tape::read() const
  * Automatically wraps current track margins based on the dynamic map bounds and the
  * current hardware head displacement coordinates.
  */
-void Tape::print(std::ostream &os) const
+void Tape::print(std::ostream &os) const noexcept
 {
     os << "Tape: ";
 
-    int min_idx = std::min(0, this->head_pos_);
-    int max_idx = std::max(0, this->head_pos_);
+    // To prevent giant memory printing overhead when head is far away,
+    // visible window is clamped around the actual data limits and head position.
+    int min_idx = this->head_pos_;
+    int max_idx = this->head_pos_;
 
     // If there is data, expand limits to show the whole string
     if (!this->cells_.empty())
@@ -61,6 +75,10 @@ void Tape::print(std::ostream &os) const
         min_idx = std::min(min_idx, this->cells_.begin()->first);
         max_idx = std::max(max_idx, this->cells_.rbegin()->first);
     }
+
+    // Optional safety padding to see at least 2 blank cells around boundaries
+    min_idx = std::min(min_idx, this->head_pos_ - 2);
+    max_idx = std::max(max_idx, this->head_pos_ + 2);
 
     // Row 1: Render structural tape cell elements sequentially
     for (int i = min_idx; i <= max_idx; ++i)
@@ -90,7 +108,7 @@ void Tape::print(std::ostream &os) const
  *
  * Seamlessly pipes the custom Tape print layout directly into standard I/O pipelines.
  */
-std::ostream &operator<<(std::ostream &os, const Tape &tape)
+std::ostream &operator<<(std::ostream &os, const Tape &tape) noexcept
 {
     tape.print(os);
     return os;

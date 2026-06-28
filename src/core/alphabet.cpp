@@ -17,7 +17,7 @@
  * @brief Serializes the sorted collection layout using mathematical format markers.
  * Leverages C++20/C++23 structural views pipelines to enforce precise delimiter spacing.
  */
-void Alphabet::print(std::ostream &os) const
+void Alphabet::print(std::ostream &os) const noexcept
 {
     os << "{";
     for (auto [idx, s] : std::views::enumerate(this->set_))
@@ -34,7 +34,7 @@ void Alphabet::print(std::ostream &os) const
 /**
  * @brief Direct pipeline bridge forwarding stream requests toward the internal print interface.
  */
-std::ostream &operator<<(std::ostream &os, const Alphabet &alphabet)
+std::ostream &operator<<(std::ostream &os, const Alphabet &alphabet) noexcept
 {
     alphabet.print(os);
     return os;

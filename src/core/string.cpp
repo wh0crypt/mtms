@@ -31,7 +31,7 @@ String::String(std::string_view str)
  *
  * Optimizes performance overhead by pre-allocating heap capacity tokens via reserve().
  */
-std::string String::get_str() const
+std::string String::get_str() const noexcept(false)
 {
     std::string result;
     result.reserve(this->symbols_.size());
@@ -49,7 +49,7 @@ std::string String::get_str() const
  *
  * Evaluates short-circuit logical breaks using standard library ranges algorithms.
  */
-bool String::is_valid_for(const Alphabet &alphabet) const
+bool String::is_valid_for(const Alphabet &alphabet) const noexcept
 {
     return std::ranges::all_of(this->symbols_, [&alphabet](const Symbol &s) {
         return alphabet.contains(s);
