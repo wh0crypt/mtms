@@ -68,7 +68,6 @@ class String
 
     /**
      * @brief Returns an iterator to the beginning of the symbol sequence.
-     * Enables range-based loops directly on String instances.
      */
     [[nodiscard]] auto begin() const { return this->symbols_.begin(); }
 

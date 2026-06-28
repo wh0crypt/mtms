@@ -65,6 +65,16 @@ class Alphabet
     [[nodiscard]] bool contains(const Symbol &symbol) const { return this->set_.contains(symbol); }
 
     /**
+     * @brief Returns an iterator to the beginning of the alphabet set.
+     */
+    [[nodiscard]] auto begin() const { return this->set_.begin(); }
+
+    /**
+     * @brief Returns an iterator to the end of the alphabet set.
+     */
+    [[nodiscard]] auto end() const { return this->set_.end(); }
+
+    /**
      * @brief Prints the alphabet in mathematical set notation format (e.g., "{0, 1}").
      * @param os The target output stream (defaults to std::cout).
      */
