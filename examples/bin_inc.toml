@@ -4,21 +4,82 @@ description = "Adds 1 to a binary number using an auxiliary tape"
 
 [machine]
 tape_count = 2
-initial_state = "q0"
+initial_state = "q_copy"
 input_alphabet = ["0", "1"]
-tape_alphabet = ["0", "1", "X", "Y", " "]
+tape_alphabet = ["0", "1", " "]
 
 [[states]]
-name = "q0"
+name = "q_copy"
+is_accept = false
+
+[[states]]
+name = "q_increment"
 is_accept = false
 
 [[states]]
 name = "q_accept"
 is_accept = true
 
+# --- STEP 1: Copy input to aux tape (Tape 1) ---
 [[transitions]]
-current_state = "q0"
-next_state = "q_accept"
+current_state = "q_copy"
+next_state = "q_copy"
+read = ["0", " "]
+write = ["0", "0"]
+direction = ["RIGHT", "RIGHT"]
+
+[[transitions]]
+current_state = "q_copy"
+next_state = "q_copy"
 read = ["1", " "]
 write = ["1", "1"]
-direction = ["RIGHT", "STAY"]
+direction = ["RIGHT", "RIGHT"]
+
+# When end of input reached (blank), back head 1 to start adding from LSb
+[[transitions]]
+current_state = "q_copy"
+next_state = "q_increment"
+read = [" ", " "]
+write = [" ", " "]
+direction = ["LEFT", "LEFT"]
+
+# --- STEP 2: Add 1 to Tape 1 (carry handling) ---
+# Case A: Reads a '1' on the aux tape, it turns it into '0' (carry continues)
+# Both move LEFT to keep them aligned on the actual bits
+[[transitions]]
+current_state = "q_increment"
+next_state = "q_increment"
+read = ["0", "1"]
+write = ["0", "0"]
+direction = ["LEFT", "LEFT"]
+
+[[transitions]]
+current_state = "q_increment"
+next_state = "q_increment"
+read = ["1", "1"]
+write = ["1", "0"]
+direction = ["LEFT", "LEFT"]
+
+# Case B: Reads a '0' on the aux tape, it turns it into '1' (carry ends -> ACCEPT)
+[[transitions]]
+current_state = "q_increment"
+next_state = "q_accept"
+read = ["0", "0"]
+write = ["0", "1"]
+direction = ["STAY", "STAY"]
+
+[[transitions]]
+current_state = "q_increment"
+next_state = "q_accept"
+read = ["1", "0"]
+write = ["1", "1"]
+direction = ["STAY", "STAY"]
+
+# Case C: The string was all 1s (e.g., "111"), it reached the blank before the string
+# Writes the final carry '1' on Tape 1 and accept
+[[transitions]]
+current_state = "q_increment"
+next_state = "q_accept"
+read = [" ", " "]
+write = [" ", "1"]
+direction = ["STAY", "STAY"]
