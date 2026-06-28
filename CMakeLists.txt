@@ -82,3 +82,13 @@ if(BUILD_GUI)
 else()
     message(STATUS "BUILD_GUI is set to OFF. mtms-gui will not be built.")
 endif()
+
+# DOCS
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    add_custom_target(docs
+        COMMAND doxygen ${CMAKE_SOURCE_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating documentation with Doxygen"
+    )
+endif()
