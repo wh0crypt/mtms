@@ -132,6 +132,36 @@ class TuringMachine
      */
     [[nodiscard]] std::size_t get_tape_count() const { return this->tape_count_; }
 
+    /**
+     * @brief Adds a transition to the machine.
+     * @return true If the transition was successfully inserted for the first time,
+     * false if the transition was not inserted or already existed.
+     */
+    bool add_transition(const Transition &transition)
+    {
+        return this->transition_table_.insert(transition).second;
+    }
+
+    /**
+     * @brief Removes a transition from the machine.
+     * @return true If the transition was successfully erased,
+     * false if the transition was not removed.
+     */
+    bool remove_transition(const Transition &transition)
+    {
+        return this->transition_table_.erase(transition) != 0;
+    }
+
+    /**
+     * @brief Checks whether the machine contains a specific transition.
+     * @return true If the transition is contained in the machine,
+     * false if it is not.
+     */
+    [[nodiscard]] bool contains_transition(const Transition &transition) const
+    {
+        return this->transition_table_.contains(transition);
+    }
+
   private:
     Alphabet input_alphabet_; ///< Input validation vocabulary (\f$\Sigma\f$).
     Alphabet tape_alphabet_;  ///< Structural execution workspace vocabulary (\f$\Gamma\f$).

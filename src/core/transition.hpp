@@ -57,19 +57,19 @@ class Transition
      * @brief Retrieves the source state required to trigger this transition.
      * @return const State& A read-only reference to the current execution state.
      */
-    [[nodiscard]] const State &get_current_state() const { return this->current_state_; }
+    [[nodiscard]] const State &get_current_state() const noexcept { return this->current_state_; }
 
     /**
      * @brief Retrieves the target state the machine will enter after executing this rule.
      * @return const State& A read-only reference to the next execution state.
      */
-    [[nodiscard]] const State &get_next_state() const { return this->next_state_; }
+    [[nodiscard]] const State &get_next_state() const noexcept { return this->next_state_; }
 
     /**
      * @brief Retrieves the collection of symbols that must be present under the tape heads.
      * @return const std::vector<Symbol>& A read-only reference to the expected symbols vector.
      */
-    [[nodiscard]] const std::vector<Symbol> &get_read_symbols() const
+    [[nodiscard]] const std::vector<Symbol> &get_read_symbols() const noexcept
     {
         return this->read_symbols_;
     }
@@ -78,7 +78,7 @@ class Transition
      * @brief Retrieves the new symbols that will overwrite the current parallel tape cells.
      * @return const std::vector<Symbol>& A read-only reference to the symbols to be written.
      */
-    [[nodiscard]] const std::vector<Symbol> &get_write_symbols() const
+    [[nodiscard]] const std::vector<Symbol> &get_write_symbols() const noexcept
     {
         return this->write_symbols_;
     }
@@ -87,7 +87,7 @@ class Transition
      * @brief Retrieves the directions in which each parallel tape head must shift.
      * @return const std::vector<Direction>& A read-only reference to the head movement vectors.
      */
-    [[nodiscard]] const std::vector<Direction> &get_directions() const
+    [[nodiscard]] const std::vector<Direction> &get_directions() const noexcept
     {
         return this->dir_vectors_;
     }
@@ -101,9 +101,10 @@ class Transition
      * @param other The transition to compare against.
      * @return true if both transitions represent the same input condition.
      */
-    [[nodiscard]] bool operator==(const Transition &other) const
+    [[nodiscard]] bool operator==(const Transition &other) const noexcept
     {
-        return current_state_ == other.current_state_ && read_symbols_ == other.read_symbols_;
+        return this->current_state_ == other.current_state_ &&
+               this->read_symbols_ == other.read_symbols_;
     }
 
     /**
@@ -112,11 +113,81 @@ class Transition
      * @warning This ordering is purely structural and does NOT represent
      * mathematical equivalence of transitions in the Turing Machine definition.
      */
-    [[nodiscard]] auto operator<=>(const Transition &other) const
+    [[nodiscard]] auto operator<=>(const Transition &other) const noexcept
     {
-        if (auto cmp = current_state_ <=> other.current_state_; cmp != 0)
+        if (auto cmp = this->current_state_ <=> other.current_state_; cmp != nullptr)
+        {
             return cmp;
-        return read_symbols_ <=> other.read_symbols_;
+        }
+        return this->read_symbols_ <=> other.read_symbols_;
+    }
+
+    /**
+     * @brief Modifies the transition's destination state.
+     */
+    void set_next_state(State next) noexcept { this->next_state_ = std::move(next); }
+
+    /**
+     * @brief Modifies the whole reading symbols block (k-tapes).
+     */
+    void set_read_symbols(std::vector<Symbol> read) noexcept
+    {
+        this->read_symbols_ = std::move(read);
+    }
+
+    /**
+     * @brief Modifies the whole writing symbols block (k-tapes).
+     */
+    void set_write_symbols(std::vector<Symbol> write) noexcept
+    {
+        this->write_symbols_ = std::move(write);
+    }
+
+    /**
+     * @brief Modifies the heads' movement direction.
+     */
+    void set_directions(std::vector<Direction> dir) noexcept
+    {
+        this->dir_vectors_ = std::move(dir);
+    }
+
+    /**
+     * @brief Allows granular modification of a specific tape cell.
+     * @throw std::out_of_range If the tape index is invalid.
+     */
+    void set_read_symbol_at(std::size_t tape_idx, const Symbol &sym) noexcept(false)
+    {
+        if (tape_idx >= this->read_symbols_.size())
+        {
+            throw std::out_of_range("Tape index out of bounds for read_symbols_");
+        }
+        this->read_symbols_[tape_idx] = sym;
+    }
+
+    /**
+     * @brief Allows granular modification of a specific tape cell.
+     * @throw std::out_of_range If the tape index is invalid.
+     */
+    void set_write_symbol_at(std::size_t tape_idx, const Symbol &sym) noexcept(false)
+    {
+        if (tape_idx >= this->write_symbols_.size())
+        {
+            throw std::out_of_range("Tape index out of bounds for write_symbols_");
+        }
+        this->write_symbols_[tape_idx] = sym;
+    }
+
+    /**
+     * @brief Allows granular modification of a specific tape cell.
+     * @throw std::out_of_range If the tape index is invalid.
+     */
+    void set_direction_at(std::size_t tape_idx, const Direction &dir) noexcept(false)
+    {
+        if (tape_idx >= this->dir_vectors_.size())
+        {
+            throw std::out_of_range("Tape index out of bounds for dir_vectors_");
+        }
+        this->dir_vectors_[tape_idx] = dir;
     }
 
   private:
