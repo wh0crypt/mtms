@@ -44,7 +44,11 @@ TuringMachine::TuringMachine(
 bool TuringMachine::load_input(std::string_view input)
 {
     String str(input);
-    if (!str.is_valid_for(this->input_alphabet_)) return false;
+    if (!str.is_valid_for(this->input_alphabet_))
+    {
+        return false;
+    }
+
     this->tapes_.assign(this->tape_count_, Tape());
     this->tapes_[0] = Tape(str);
     this->current_state_ = this->start_state_;
@@ -59,11 +63,15 @@ bool TuringMachine::load_input(std::string_view input)
  */
 bool TuringMachine::step()
 {
-    if (this->current_state_.is_accept()) return false;
+    if (this->current_state_.is_accept())
+    {
+        return false;
+    }
 
     // Gather the currently read symbols from all parallel tape heads
     std::vector<Symbol> current_symbols;
     current_symbols.reserve(this->tape_count_);
+
     for (const auto &tape : this->tapes_)
     {
         current_symbols.push_back(tape.read());
@@ -79,7 +87,10 @@ bool TuringMachine::step()
     );
 
     // If no multi-tape rule matches the current machine vector layout, halt (Crash/Reject)
-    if (it == this->transition_table_.end()) return false;
+    if (it == this->transition_table_.end())
+    {
+        return false;
+    }
 
     // Apply side-effects simultaneously to all affected tracks
     for (std::size_t i = 0; i < this->tape_count_; ++i)

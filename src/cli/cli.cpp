@@ -91,7 +91,10 @@ int run_cli_session(TuringMachine &machine, std::string_view input_word, bool in
     // Batch Mode
     else
     {
-        while (machine.step()) ++step_counter;
+        while (machine.step())
+        {
+            ++step_counter;
+        }
 
         if (machine.get_current_state().is_accept())
         {

@@ -87,7 +87,10 @@ void Program::parse_args(int argc, char *argv[], Program::Options &options)
             }
 
             std::filesystem::path path = *it;
-            if (path.extension() != ".toml") path.replace_extension(".toml");
+            if (path.extension() != ".toml")
+            {
+                path.replace_extension(".toml");
+            }
             options.output_file = path.string();
             continue;
         }

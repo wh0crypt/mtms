@@ -48,7 +48,10 @@ bool Project::parse_states(
             parsed_states.insert(s);
             state_map.emplace(name, s);
 
-            if (name == init_state_name) initial_state = s;
+            if (name == init_state_name)
+            {
+                initial_state = s;
+            }
         }
     }
     return true;
@@ -170,7 +173,12 @@ bool Project::parse_transitions(
 
             std::string key_state = curr_name + "|";
             std::string key_read;
-            for (const auto &s : read_vec) key_read += s.get_char();
+
+            for (const auto &s : read_vec)
+            {
+                key_read += s.get_char();
+            }
+
             if (!seen.emplace(key_state, key_read).second)
             {
                 std::println(stderr, "[!] Non-deterministic TM detected at state '{}'.", curr_name);
@@ -257,7 +265,10 @@ bool Project::load_project(const std::filesystem::path &filepath)
     try
     {
         auto config = toml::parse_file(filepath.string());
-        if (!this->parse_metadata(config)) return false;
+        if (!this->parse_metadata(config))
+        {
+            return false;
+        }
 
         // Get Machine Specs
         std::size_t tape_count = config["machine"]["tape_count"].value_or(1);
@@ -266,15 +277,23 @@ bool Project::load_project(const std::filesystem::path &filepath)
         std::set<State> parsed_states;
         State initial_state;
         std::unordered_map<std::string, State> state_map;
-        if (!parse_states(config, parsed_states, initial_state, state_map)) return false;
+        if (!parse_states(config, parsed_states, initial_state, state_map))
+        {
+            return false;
+        }
 
         Alphabet input_alpha, tape_alpha;
-        if (!parse_alphabets(config, input_alpha, tape_alpha)) return false;
+        if (!parse_alphabets(config, input_alpha, tape_alpha))
+        {
+            return false;
+        }
 
         std::set<Transition> transition_table;
         std::unordered_map<std::string, std::vector<std::string>> graph;
         if (!parse_transitions(config, tape_count, state_map, transition_table, graph))
+        {
             return false;
+        }
 
         // Mathematical Inclusion Validation (Σ ⊂ Γ)
         for (const auto &sym : input_alpha)
@@ -312,7 +331,10 @@ bool Project::load_project(const std::filesystem::path &filepath)
 
 bool Project::save_project(const std::filesystem::path &filepath) const
 {
-    if (!this->has_active_machine()) return false;
+    if (!this->has_active_machine())
+    {
+        return false;
+    }
 
     try
     {
@@ -396,7 +418,10 @@ bool Project::save_project(const std::filesystem::path &filepath) const
 
         // Open stream pipeline and dump the structured tables
         std::ofstream file(filepath, std::ios::out | std::ios::trunc);
-        if (!file.is_open()) return false;
+        if (!file.is_open())
+        {
+            return false;
+        }
 
         file << root << "\n";
         return true;

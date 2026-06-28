@@ -114,7 +114,8 @@ class Transition
      */
     [[nodiscard]] auto operator<=>(const Transition &other) const
     {
-        if (auto cmp = current_state_ <=> other.current_state_; cmp != 0) return cmp;
+        if (auto cmp = current_state_ <=> other.current_state_; cmp != 0)
+            return cmp;
         return read_symbols_ <=> other.read_symbols_;
     }
 
