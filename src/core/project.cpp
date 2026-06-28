@@ -159,8 +159,13 @@ bool Project::load_project(const std::filesystem::path &filepath)
                     }
                 }
 
-                transition_table
-                    .emplace(curr_it->second, next_it->second, read_vec, write_vec, dir_vec);
+                transition_table.emplace(
+                    curr_it->second,
+                    next_it->second,
+                    std::move(read_vec),
+                    std::move(write_vec),
+                    std::move(dir_vec)
+                );
             }
         }
 
