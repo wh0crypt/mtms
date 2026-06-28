@@ -15,7 +15,9 @@
 #include <set>
 #include <vector>
 
-bool Project::parse_metadata(const toml::table &config)
+#define TOML_HEADER_ONLY 1
+
+bool Project::parse_metadata(const toml::table &config) noexcept
 {
     this->name_ = config["metadata"]["name"].value_or("Untitled TM");
     this->description_ = config["metadata"]["description"].value_or("");
@@ -27,7 +29,7 @@ bool Project::parse_states(
     std::set<State> &parsed_states,
     State &initial_state,
     std::unordered_map<std::string, State> &state_map
-)
+) noexcept(false)
 {
     std::string init_state_name = config["machine"]["initial_state"].value_or("");
 
@@ -61,7 +63,7 @@ bool Project::parse_alphabets(
     const toml::table &config,
     Alphabet &input_alpha,
     Alphabet &tape_alpha
-)
+) noexcept(false)
 {
     std::set<Symbol> input_symbols;
     if (auto input_arr = config["machine"]["input_alphabet"].as_array())
@@ -106,9 +108,9 @@ bool Project::parse_transitions(
     const toml::table &config,
     std::size_t tape_count,
     const std::unordered_map<std::string, State> &state_map,
-    std::set<Transition> &transition_table,
+    const std::shared_ptr<TuringMachine> &machine,
     std::unordered_map<std::string, std::vector<std::string>> &graph
-)
+) noexcept(false)
 {
     if (auto trans_array = config["transitions"].as_array())
     {
@@ -185,7 +187,7 @@ bool Project::parse_transitions(
                 return false;
             }
 
-            transition_table.emplace(
+            machine->add_transition(
                 curr_it->second,
                 next_it->second,
                 std::move(read_vec),
@@ -201,7 +203,7 @@ bool Project::parse_transitions(
 std::unordered_set<std::string> Project::compute_reachability(
     const std::string &start_state,
     const std::unordered_map<std::string, std::vector<std::string>> &graph
-)
+) noexcept(false)
 {
     std::unordered_set<std::string> reachable;
     std::vector<std::string> stack;
@@ -234,7 +236,7 @@ bool Project::validate_machine_structure(
     const std::set<State> &parsed_states,
     const std::unordered_set<std::string> &reachable,
     const std::unordered_map<std::string, std::vector<std::string>> &graph
-)
+) noexcept(false)
 {
     for (const auto &state : parsed_states)
     {
@@ -260,7 +262,7 @@ bool Project::validate_machine_structure(
     return true;
 }
 
-bool Project::load_project(const std::filesystem::path &filepath)
+bool Project::load_project(const std::filesystem::path &filepath) noexcept(false)
 {
     try
     {
@@ -288,9 +290,16 @@ bool Project::load_project(const std::filesystem::path &filepath)
             return false;
         }
 
-        std::set<Transition> transition_table;
+        this->machine_ = std::make_shared<TuringMachine>(
+            input_alpha,
+            tape_alpha,
+            parsed_states,
+            initial_state,
+            tape_count
+        );
+
         std::unordered_map<std::string, std::vector<std::string>> graph;
-        if (!parse_transitions(config, tape_count, state_map, transition_table, graph))
+        if (!parse_transitions(config, tape_count, state_map, this->machine_, graph))
         {
             return false;
         }
@@ -310,16 +319,6 @@ bool Project::load_project(const std::filesystem::path &filepath)
         }
 
         auto reachable = compute_reachability(init_state_name, graph);
-
-        this->machine_ = std::make_shared<TuringMachine>(
-            input_alpha,
-            tape_alpha,
-            parsed_states,
-            initial_state,
-            transition_table,
-            tape_count
-        );
-
         return validate_machine_structure(parsed_states, reachable, graph);
     }
     catch (const toml::parse_error &err)
@@ -329,7 +328,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
     }
 }
 
-bool Project::save_project(const std::filesystem::path &filepath) const
+bool Project::save_project(const std::filesystem::path &filepath) const noexcept(false)
 {
     if (!this->has_active_machine())
     {
@@ -381,7 +380,7 @@ bool Project::save_project(const std::filesystem::path &filepath) const
 
         // Serialize Transitions array matrix
         toml::array trans_arr;
-        for (const auto &trans : machine->get_transition_table())
+        for (const auto &[id, trans] : machine->get_transitions())
         {
             toml::array read_sub_arr;
             for (const auto &sym : trans.get_read_symbols())

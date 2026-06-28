@@ -30,39 +30,39 @@
 class Project
 {
   public:
-    Project() : name_("Untitled TM") {}
+    Project() noexcept : name_("Untitled TM") {}
 
     /**
      * @brief Parses a TM configuration file using toml++ and instantiates the TuringMachine.
      * @param filepath Path to the target validation .toml file.
      * @return true If serialization and validation passed smoothly, false otherwise.
      */
-    bool load_project(const std::filesystem::path &filepath);
+    bool load_project(const std::filesystem::path &filepath) noexcept(false);
 
     /**
      * @brief Exports the current machine configuration snapshot back to a TOML file.
      * @param filepath Output path footprint.
      * @return true On successful file flush.
      */
-    [[nodiscard]] bool save_project(const std::filesystem::path &filepath) const;
+    [[nodiscard]] bool save_project(const std::filesystem::path &filepath) const noexcept(false);
 
     /**
      * @brief Checks if there is a valid Turing Machine instance active.
      * @return true If machine_ is not null, false otherwise.
      */
-    [[nodiscard]] bool has_active_machine() const { return this->machine_ != nullptr; }
+    [[nodiscard]] bool has_active_machine() const noexcept { return this->machine_ != nullptr; }
 
     /**
      * @brief Retrieves the pointer to the active Turing Machine instance.
      * @return std::shared_ptr<TuringMachine> The shared reference to the machine.
      */
-    [[nodiscard]] std::shared_ptr<TuringMachine> get_machine() { return this->machine_; }
+    [[nodiscard]] std::shared_ptr<TuringMachine> get_machine() noexcept { return this->machine_; }
 
     /**
      * @brief Retrieves the project's friendly configuration name.
      * @return std::string_view View of the project name.
      */
-    [[nodiscard]] std::string_view get_name() const { return this->name_; }
+    [[nodiscard]] std::string_view get_name() const noexcept { return this->name_; }
 
   private:
     std::shared_ptr<TuringMachine> machine_; ///< Active Turing Machine computation engine backend.
@@ -74,7 +74,7 @@ class Project
      * @param config Reference to the loaded TOML table root structure.
      * @return true If extraction succeeded without strict type breaks.
      */
-    bool parse_metadata(const toml::table &config);
+    bool parse_metadata(const toml::table &config) noexcept;
 
     /**
      * @brief Parses and instantiates structural computational states from TOML configuration array.
@@ -91,7 +91,7 @@ class Project
         std::set<State> &parsed_states,
         State &initial_state,
         std::unordered_map<std::string, State> &state_map
-    );
+    ) noexcept(false);
 
     /**
      * @brief Validates and builds formal inclusion alphabets (Sigma and Gamma matrices).
@@ -105,14 +105,15 @@ class Project
         const toml::table &config,
         Alphabet &input_alpha,
         Alphabet &tape_alpha
-    );
+    ) noexcept(false);
 
     /**
      * @brief Decodes the matrix table containing legal execution step pathways.
      * @param config Reference to the parsed TOML table structure.
      * @param tape_count Dimensional bounds required per sub-array alignment.
      * @param state_map Internal registry to cross-reference mapped text nodes against objects.
-     * @param transition_table Final unique structured set containing parsed transitions.
+     * @param machine Shared pointer to the active Turing Machine instance to populate with
+     * transitions.
      * @param graph Adjacency map tracker built to accelerate structural connectivity queries.
      * @return true If arrays successfully map out a valid deterministic runtime framework.
      */
@@ -120,9 +121,9 @@ class Project
         const toml::table &config,
         std::size_t tape_count,
         const std::unordered_map<std::string, State> &state_map,
-        std::set<Transition> &transition_table,
+        const std::shared_ptr<TuringMachine> &machine,
         std::unordered_map<std::string, std::vector<std::string>> &graph
-    );
+    ) noexcept(false);
 
     /**
      * @brief Computes reaching pathways from the start state over the adjacency graph via DFS.
@@ -134,7 +135,7 @@ class Project
     static std::unordered_set<std::string> compute_reachability(
         const std::string &start_state,
         const std::unordered_map<std::string, std::vector<std::string>> &graph
-    );
+    ) noexcept(false);
 
     /**
      * @brief Verifies structural integrity rules against isolated or broken nodes.
@@ -147,7 +148,7 @@ class Project
         const std::set<State> &parsed_states,
         const std::unordered_set<std::string> &reachable,
         const std::unordered_map<std::string, std::vector<std::string>> &graph
-    );
+    ) noexcept(false);
 };
 
 #endif // PROJECT_HPP

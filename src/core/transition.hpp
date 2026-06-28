@@ -35,6 +35,7 @@ class Transition
 
     /**
      * @brief Explicit constructor to define a complete multi-tape transition rule.
+     * @param id Unique runtime identifier for UI and graph edge tracking.
      * @param current The required state to trigger this transition.
      * @param next The target state the machine will transition into.
      * @param read The collection of symbols expected under each parallel tape head.
@@ -42,16 +43,23 @@ class Transition
      * @param dir The collection of displacement directions for each tape head.
      */
     explicit Transition(
+        std::size_t id,
         State current,
         State next,
         std::vector<Symbol> read,
         std::vector<Symbol> write,
         std::vector<Direction> dir
-    )
-        : current_state_(std::move(current)), next_state_(std::move(next)),
+    ) noexcept
+        : id_(id), current_state_(std::move(current)), next_state_(std::move(next)),
           read_symbols_(std::move(read)), write_symbols_(std::move(write)),
           dir_vectors_(std::move(dir))
     {}
+
+    /**
+     * @brief Retrieves the unique identifier of this transition rule.
+     * Useful for persistent mapping in GUI elements, undo/redo stacks, and graph edge binding.
+     */
+    [[nodiscard]] std::size_t get_id() const noexcept { return this->id_; }
 
     /**
      * @brief Retrieves the source state required to trigger this transition.
@@ -191,8 +199,9 @@ class Transition
     }
 
   private:
-    State current_state_;                ///< Source state for the transition rule.
-    State next_state_;                   ///< Destination state after execution.
+    std::size_t id_{0};   ///< Unique runtime identifier for UI and graph edge tracking.
+    State current_state_; ///< Source state for the transition rule.
+    State next_state_;    ///< Destination state after execution.
     std::vector<Symbol> read_symbols_;   ///< Expected vector array of symbols on the tracks.
     std::vector<Symbol> write_symbols_;  ///< New vector array of symbols to write.
     std::vector<Direction> dir_vectors_; ///< Structural head shift directions vector.
