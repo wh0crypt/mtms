@@ -86,7 +86,7 @@ A machine file is composed of four main sections:
 - `states`
 - `transitions`
 
-`examples/bin_inc.toml` is a good starting point.
+[`examples/bin_inc.toml`](./examples/bin_inc.toml) is a good starting point.
 
 It defines:
 
@@ -101,7 +101,7 @@ It defines:
 - C++23 compatible compiler (Clang 17+, GCC 13+ recommended)
 - CMake 3.25+
 - Ninja or Make (recommended: Ninja)
-- toml++ (header-only, included in [include/toml++/toml.hpp](./include/toml++/toml.hpp))
+- toml++ (header-only, included in [`include/toml++/toml.hpp`](./include/toml++/toml.hpp))
 
 ## Project Structure
 
@@ -130,25 +130,25 @@ cmake -S . -B build -DBUILD_CLI=OFF -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 
 The Core library is independent from both the CLI and GUI and contains the complete implementation of the Turing machine model:
 
-- **Symbols** and the blank tape symbol
-- **Alphabets** for input (`Sigma`) and tape work symbols (`Gamma`)
-- **Strings** as validated symbol sequences
-- **Tapes** with an infinite left/right model
-- **States** with accept/non-accept flags
-- **Transitions** for deterministic multi-tape rules
-- **Projects** that load and save TOML machine files
-- **TuringMachine** execution across multiple tapes
+- **Symbols** and the blank tape symbol [with *[Symbol]*]
+- **Alphabets** for input (`Sigma`) and tape work symbols (`Gamma`) [with *[Alphabet]*]
+- **Strings** as validated symbol sequences [with *[String]*]
+- **Tapes** with an infinite left/right model [with *[Tape]*]
+- **States** with accept/non-accept flags [with *[State]*]
+- **Transitions** for deterministic multi-tape rules [with *[Transition]*]
+- **Projects** that load and save TOML machine files [with *[Project]*]
+- **TuringMachine** execution across multiple tapes [with *[TuringMachine]*]
 
 In practice, the core:
 
-1. Reads a TOML blueprint
+1. Reads a TOML blueprint using [Project::load_project()]
 2. Validates the machine structure
 3. Loads the input onto tape 0
-4. Steps through transitions one move at a time
+4. Steps through transitions one move at a time using [TuringMachine::step()]
 5. Stops on accept or halt/reject
-6. Can export the loaded machine back to TOML
+6. Can export the loaded machine back to TOML using [Project::save_project()]
 
-The simulator is deterministic, multi-tape, and supports blank cells, left/right/stay movement, and a safety step cap during `TuringMachine::run()`.
+The simulator is deterministic, multi-tape, and supports blank cells, left/right/stay movement, and a safety step cap during [TuringMachine::run()].
 
 ## CLI
 
@@ -246,8 +246,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-This project is licensed under the MIT License. See the full license text here:  
-[LICENSE](./LICENSE)
+This project is licensed under the MIT License. See [LICENSE](./LICENSE) for the full license text.
 
 ## Acknowledgements
 
@@ -255,3 +254,16 @@ This project is licensed under the MIT License. See the full license text here:
 - [TheLazyFerret](https://github.com/TheLazyFerret/turing-machine-simulator) — inspiration for the CLI workflow and interactive simulation design.
 - [Francisco de Sande](https://portalciencia.ull.es/investigadores/80876/detalle?lang=en) and [Gara Miranda Valladares](https://portalciencia.ull.es/investigadores/81584/detalle?lang=en) — for teaching the [Formal Languages](https://en.wikipedia.org/wiki/Formal_language) and [Automata Theory](https://en.wikipedia.org/wiki/Automata_theory) course that inspired this project.
 - [JFLAP](https://www.jflap.org/) — for inspiring the graphical representation and simulation of Turing machines.
+
+[Symbol]: ./src/core/symbol.hpp
+[Alphabet]: ./src/core/alphabet.hpp
+[String]: ./src/core/string.hpp
+[Tape]: ./src/core/tape.hpp
+[State]: ./src/core/state.hpp
+[Transition]: ./src/core/transition.hpp
+[Project]: ./src/core/project.hpp
+[Project::load_project()]: ./src/core/project.cpp#L263
+[Project::save_project()]: ./src/core/project.cpp#L332
+[TuringMachine]: ./src/core/tm.hpp
+[TuringMachine::step()]: ./src/core/tm.cpp#L64
+[TuringMachine::run()]: ./src/core/tm.cpp#L112
