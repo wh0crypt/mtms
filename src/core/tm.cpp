@@ -45,8 +45,7 @@ bool TuringMachine::load_input(std::string_view input)
 {
     String str(input);
     if (!str.is_valid_for(this->input_alphabet_)) return false;
-    this->tapes_.clear();
-    this->tapes_.resize(this->tape_count_);
+    this->tapes_.assign(this->tape_count_, Tape());
     this->tapes_[0] = Tape(str);
     this->current_state_ = this->start_state_;
     return true;

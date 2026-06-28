@@ -61,12 +61,27 @@ class Tape
     void write(Symbol symbol) { this->cells_[this->head_pos_] = symbol; }
 
     /**
-     * @brief Shifts the tape head one cell to the left or right.
+     * @brief Shifts the tape head one cell to the left, right or make it stay.
+     *
      * Passed by value since Direction is an enum class.
      *
-     * @param dir The movement direction (LEFT or RIGHT).
+     * @param dir The movement direction (LEFT, RIGHT or STAY).
      */
-    void move(Direction dir) { dir == Direction::LEFT ? --this->head_pos_ : ++this->head_pos_; }
+    void move(Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction::LEFT:
+                --this->head_pos_;
+                break;
+            case Direction::RIGHT:
+                ++this->head_pos_;
+                break;
+            case Direction::STAY:
+            default:
+                break;
+        }
+    }
 
     /**
      * @brief Renders the active layout of the tape and the head tracking to an output stream.
