@@ -1,0 +1,33 @@
+name: CLI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build g++-14
+
+      - name: Configure
+        env:
+          CC: gcc-14
+          CXX: g++-14
+        run: |
+          cmake -S . -B build \
+            -DBUILD_CLI=ON \
+            -DBUILD_GUI=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build
