@@ -108,7 +108,7 @@ void TuringMachine::run()
         {
             std::println(
                 stderr,
-                "Warning: Execution forced-halted. Exceeded max security step limit ({} cycles).",
+                "[-] Execution forced-halted. Exceeded max security step limit ({} cycles).",
                 kMaxSteps
             );
             break;
