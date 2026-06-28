@@ -54,7 +54,7 @@ class Symbol
      * @param other The other Symbol instance to compare against.
      * @return auto A strong ordering comparison category (std::strong_ordering).
      */
-    auto operator<=>(const Symbol &other) const = default;
+    [[nodiscard]] auto operator<=>(const Symbol &other) const = default;
 
     /**
      * @brief Defaulted copy assignment operator.

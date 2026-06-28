@@ -96,7 +96,7 @@ class String
      * @param other The other String instance to compare against.
      * @return auto A strong ordering comparison category (std::strong_ordering).
      */
-    auto operator<=>(const String &other) const = default;
+    [[nodiscard]] auto operator<=>(const String &other) const = default;
 
   private:
     std::vector<Symbol> symbols_; ///< The finite sequence of symbols forming the string.
