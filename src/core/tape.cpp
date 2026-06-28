@@ -50,23 +50,19 @@ Symbol Tape::read() const
  */
 void Tape::print(std::ostream &os) const
 {
-    // Edge case: Handle completely unallocated tapes safely
-    if (this->cells_.empty())
+    os << "Tape: ";
+
+    int min_idx = std::min(0, this->head_pos_);
+    int max_idx = std::max(0, this->head_pos_);
+
+    // If there is data, expand limits to show the whole string
+    if (!this->cells_.empty())
     {
-        os << "| |\n";
-        return;
+        min_idx = std::min(min_idx, this->cells_.begin()->first);
+        max_idx = std::max(max_idx, this->cells_.rbegin()->first);
     }
 
-    // Capture the current bounds of modified memory via map iterators
-    int min_idx = this->cells_.begin()->first;
-    int max_idx = this->cells_.rbegin()->first;
-
-    // Expand boundaries dynamically if the head migrated into clean virtual space
-    min_idx = std::min(min_idx, this->head_pos_);
-    max_idx = std::max(max_idx, this->head_pos_);
-
     // Row 1: Render structural tape cell elements sequentially
-    os << "Tape: ";
     for (int i = min_idx; i <= max_idx; ++i)
     {
         auto it = this->cells_.find(i);
