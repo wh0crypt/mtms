@@ -13,167 +13,271 @@
 #include <fstream>
 #include <print>
 #include <set>
-#include <toml++/toml.hpp>
-#include <unordered_map>
 #include <vector>
 
-#define TOML_HEADER_ONLY 1
+bool Project::parse_metadata(const toml::table &config)
+{
+    this->name_ = config["metadata"]["name"].value_or("Untitled TM");
+    this->description_ = config["metadata"]["description"].value_or("");
+    return true;
+}
+
+bool Project::parse_states(
+    const toml::table &config,
+    std::set<State> &parsed_states,
+    State &initial_state,
+    std::unordered_map<std::string, State> &state_map
+)
+{
+    std::string init_state_name = config["machine"]["initial_state"].value_or("");
+
+    if (auto states_array = config["states"].as_array())
+    {
+        for (auto &&node : *states_array)
+        {
+            auto &&table = *node.as_table();
+            std::string name = table["name"].value_or("");
+            bool is_accept = table["is_accept"].value_or(false);
+
+            State s(name, is_accept);
+            if (state_map.contains(name))
+            {
+                std::println(stderr, "[!] Duplicate state '{}'.", name);
+                return false;
+            }
+            parsed_states.insert(s);
+            state_map.emplace(name, s);
+
+            if (name == init_state_name) initial_state = s;
+        }
+    }
+    return true;
+}
+
+bool Project::parse_alphabets(
+    const toml::table &config,
+    Alphabet &input_alpha,
+    Alphabet &tape_alpha
+)
+{
+    std::set<Symbol> input_symbols;
+    if (auto input_arr = config["machine"]["input_alphabet"].as_array())
+    {
+        for (auto &&node : *input_arr)
+        {
+            std::string sym_str = node.value_or("");
+            if (!sym_str.empty())
+            {
+                Symbol sym(sym_str[0]);
+                if (sym.get_char() == kBlank)
+                {
+                    std::println(
+                        stderr,
+                        "[!] Input alphabet (Sigma) cannot contain the blank symbol."
+                    );
+                    return false;
+                }
+                input_symbols.insert(sym);
+            }
+        }
+    }
+
+    std::set<Symbol> tape_symbols;
+    if (auto tape_arr = config["machine"]["tape_alphabet"].as_array())
+    {
+        for (auto &&node : *tape_arr)
+        {
+            std::string sym_str = node.value_or(" ");
+            Symbol sym(sym_str.empty() ? kBlank : sym_str[0]);
+            tape_symbols.insert(sym);
+        }
+    }
+    tape_symbols.insert(Symbol(kBlank));
+
+    input_alpha = Alphabet(input_symbols);
+    tape_alpha = Alphabet(tape_symbols);
+    return true;
+}
+
+bool Project::parse_transitions(
+    const toml::table &config,
+    std::size_t tape_count,
+    const std::unordered_map<std::string, State> &state_map,
+    std::set<Transition> &transition_table,
+    std::unordered_map<std::string, std::vector<std::string>> &graph
+)
+{
+    if (auto trans_array = config["transitions"].as_array())
+    {
+        std::set<std::pair<std::string, std::string>> seen;
+        for (auto &&node : *trans_array)
+        {
+            auto &&table = *node.as_table();
+
+            std::string curr_name = table["current_state"].value_or("");
+            std::string next_name = table["next_state"].value_or("");
+
+            auto curr_it = state_map.find(curr_name);
+            auto next_it = state_map.find(next_name);
+            if (curr_it == state_map.end() || next_it == state_map.end())
+            {
+                std::println(stderr, "[!] Transition references an undefined state.");
+                return false;
+            }
+
+            std::vector<Symbol> read_vec;
+            std::vector<Symbol> write_vec;
+            std::vector<Direction> dir_vec;
+            if (auto read_arr = table["read"].as_array())
+            {
+                for (auto &&s_node : *read_arr)
+                {
+                    std::string s_str = s_node.value_or(" ");
+                    read_vec.emplace_back(s_str.empty() ? kBlank : s_str[0]);
+                }
+            }
+            if (auto write_arr = table["write"].as_array())
+            {
+                for (auto &&s_node : *write_arr)
+                {
+                    std::string s_str = s_node.value_or(" ");
+                    write_vec.emplace_back(s_str.empty() ? kBlank : s_str[0]);
+                }
+            }
+            if (auto dir_arr = table["direction"].as_array())
+            {
+                for (auto &&d_node : *dir_arr)
+                {
+                    std::string d_str = d_node.value_or("STAY");
+                    dir_vec.push_back(
+                        (d_str == "LEFT")    ? Direction::LEFT
+                        : (d_str == "RIGHT") ? Direction::RIGHT
+                                             : Direction::STAY
+                    );
+                }
+            }
+
+            if (read_vec.size() != tape_count || write_vec.size() != tape_count ||
+                dir_vec.size() != tape_count)
+            {
+                std::println(
+                    stderr,
+                    "[!] Invalid transition in state '{}'. Tape dimension mismatch.",
+                    curr_name
+                );
+                return false;
+            }
+
+            std::string key_state = curr_name + "|";
+            std::string key_read;
+            for (const auto &s : read_vec) key_read += s.get_char();
+            if (!seen.emplace(key_state, key_read).second)
+            {
+                std::println(stderr, "[!] Non-deterministic TM detected at state '{}'.", curr_name);
+                return false;
+            }
+
+            transition_table.emplace(
+                curr_it->second,
+                next_it->second,
+                std::move(read_vec),
+                std::move(write_vec),
+                std::move(dir_vec)
+            );
+            graph[curr_name].push_back(next_name);
+        }
+    }
+    return true;
+}
+
+std::unordered_set<std::string> Project::compute_reachability(
+    const std::string &start_state,
+    const std::unordered_map<std::string, std::vector<std::string>> &graph
+)
+{
+    std::unordered_set<std::string> reachable;
+    std::vector<std::string> stack;
+
+    stack.push_back(start_state);
+    reachable.insert(start_state);
+
+    while (!stack.empty())
+    {
+        std::string cur = stack.back();
+        stack.pop_back();
+
+        auto it = graph.find(cur);
+        if (it != graph.end())
+        {
+            for (const auto &n : it->second)
+            {
+                if (!reachable.contains(n))
+                {
+                    reachable.insert(n);
+                    stack.push_back(n);
+                }
+            }
+        }
+    }
+    return reachable;
+}
+
+bool Project::validate_machine_structure(
+    const std::set<State> &parsed_states,
+    const std::unordered_set<std::string> &reachable,
+    const std::unordered_map<std::string, std::vector<std::string>> &graph
+)
+{
+    for (const auto &state : parsed_states)
+    {
+        std::string state_name(state.get_label());
+        if (!reachable.contains(state_name))
+        {
+            std::println(stderr, "[-] State '{}' is unreachable from initial state.", state_name);
+        }
+
+        auto it = graph.find(state_name);
+        bool has_any_transition = (it != graph.end() && !it->second.empty());
+
+        if (!has_any_transition && !state.is_accept())
+        {
+            std::println(
+                stderr,
+                "[!] Incomplete TM. Non-accepting state '{}' has no outgoing transitions.",
+                state_name
+            );
+            return false;
+        }
+    }
+    return true;
+}
 
 bool Project::load_project(const std::filesystem::path &filepath)
 {
     try
     {
         auto config = toml::parse_file(filepath.string());
-
-        // Extract Metadata
-        this->name_ = config["metadata"]["name"].value_or("Untitled TM");
-        this->description_ = config["metadata"]["description"].value_or("");
+        if (!this->parse_metadata(config)) return false;
 
         // Get Machine Specs
         std::size_t tape_count = config["machine"]["tape_count"].value_or(1);
         std::string init_state_name = config["machine"]["initial_state"].value_or("");
 
-        // Parse States
         std::set<State> parsed_states;
         State initial_state;
         std::unordered_map<std::string, State> state_map;
-        if (auto states_array = config["states"].as_array())
-        {
-            for (auto &&node : *states_array)
-            {
-                auto &&table = *node.as_table();
-                std::string name = table["name"].value_or("");
-                bool is_accept = table["is_accept"].value_or(false);
+        if (!parse_states(config, parsed_states, initial_state, state_map)) return false;
 
-                State s(name, is_accept);
-                if (state_map.contains(name))
-                {
-                    std::println(stderr, "[!] Duplicate state '{}'.", name);
-                    return false;
-                }
-                parsed_states.insert(s);
-                state_map.emplace(name, s);
+        Alphabet input_alpha, tape_alpha;
+        if (!parse_alphabets(config, input_alpha, tape_alpha)) return false;
 
-                if (name == init_state_name) initial_state = s;
-            }
-        }
-
-        // Parse Input Alphabet (Sigma)
-        std::set<Symbol> input_symbols;
-        if (auto input_arr = config["machine"]["input_alphabet"].as_array())
-        {
-            for (auto &&node : *input_arr)
-            {
-                std::string sym_str = node.value_or("");
-                if (!sym_str.empty())
-                {
-                    Symbol sym(sym_str[0]);
-
-                    // Formal Rule 1: Sigma cannot contain the blank character
-                    if (sym.get_char() == kBlank)
-                    {
-                        std::println(
-                            stderr,
-                            "[!] Input alphabet (Sigma) cannot contain the blank symbol."
-                        );
-                        return false;
-                    }
-                    input_symbols.insert(sym);
-                }
-            }
-        }
-
-        // Parse Tape Alphabet (Gamma)
-        std::set<Symbol> tape_symbols;
-        if (auto tape_arr = config["machine"]["tape_alphabet"].as_array())
-        {
-            for (auto &&node : *tape_arr)
-            {
-                std::string sym_str = node.value_or(" ");
-                Symbol sym(sym_str.empty() ? kBlank : sym_str[0]);
-                tape_symbols.insert(sym);
-            }
-        }
-
-        // Make sure Blank symbol is part of Tape Alphabet
-        tape_symbols.insert(Symbol(kBlank));
-
-        // Transitions Parsing Matrix
         std::set<Transition> transition_table;
-        if (auto trans_array = config["transitions"].as_array())
-        {
-            for (auto &&node : *trans_array)
-            {
-                auto &&table = *node.as_table();
-
-                std::string curr_name = table["current_state"].value_or("");
-                std::string next_name = table["next_state"].value_or("");
-
-                auto curr_it = state_map.find(curr_name);
-                auto next_it = state_map.find(next_name);
-
-                if (curr_it == state_map.end() || next_it == state_map.end())
-                {
-                    std::println(stderr, "[!] Transition references an undefined state.");
-                    return false;
-                }
-
-                std::vector<Symbol> read_vec;
-                std::vector<Symbol> write_vec;
-                std::vector<Direction> dir_vec;
-
-                // Parse read array
-                if (auto read_arr = table["read"].as_array())
-                {
-                    for (auto &&s_node : *read_arr)
-                    {
-                        std::string sym_str = s_node.value_or(" ");
-                        Symbol sym(sym_str.empty() ? kBlank : sym_str[0]);
-                        read_vec.push_back(sym);
-                        tape_symbols.insert(sym);
-                    }
-                }
-
-                // Parse write array
-                if (auto write_arr = table["write"].as_array())
-                {
-                    for (auto &&s_node : *write_arr)
-                    {
-                        std::string sym_str = s_node.value_or(" ");
-                        Symbol sym(sym_str.empty() ? kBlank : sym_str[0]);
-                        write_vec.push_back(sym);
-                        tape_symbols.insert(sym);
-                    }
-                }
-
-                // Parse direction array
-                if (auto dir_arr = table["direction"].as_array())
-                {
-                    for (auto &&d_node : *dir_arr)
-                    {
-                        std::string d_str = d_node.value_or("STAY");
-                        Direction d = (d_str == "LEFT")    ? Direction::LEFT
-                                      : (d_str == "RIGHT") ? Direction::RIGHT
-                                                           : Direction::STAY;
-                        dir_vec.push_back(d);
-                    }
-                }
-
-                transition_table.emplace(
-                    curr_it->second,
-                    next_it->second,
-                    std::move(read_vec),
-                    std::move(write_vec),
-                    std::move(dir_vec)
-                );
-            }
-        }
+        std::unordered_map<std::string, std::vector<std::string>> graph;
+        if (!parse_transitions(config, tape_count, state_map, transition_table, graph))
+            return false;
 
         // Mathematical Inclusion Validation (Σ ⊂ Γ)
-        Alphabet input_alpha(input_symbols);
-        Alphabet tape_alpha(tape_symbols);
-
-        for (const auto &sym : input_symbols)
+        for (const auto &sym : input_alpha)
         {
             if (!tape_alpha.contains(sym))
             {
@@ -186,7 +290,8 @@ bool Project::load_project(const std::filesystem::path &filepath)
             }
         }
 
-        // Engine Instantiation handover
+        auto reachable = compute_reachability(init_state_name, graph);
+
         this->machine_ = std::make_shared<TuringMachine>(
             input_alpha,
             tape_alpha,
@@ -196,7 +301,7 @@ bool Project::load_project(const std::filesystem::path &filepath)
             tape_count
         );
 
-        return true;
+        return validate_machine_structure(parsed_states, reachable, graph);
     }
     catch (const toml::parse_error &err)
     {
